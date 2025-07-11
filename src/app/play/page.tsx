@@ -310,7 +310,7 @@ function PlayPageClient() {
         case 'SD':
           return 20;
         default:
-          return 30;
+          return 0;
       }
     })();
     score += qualityScore * 0.4;
