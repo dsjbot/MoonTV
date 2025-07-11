@@ -1261,7 +1261,6 @@ function PlayPageClient() {
         if (artPlayerRef.current.currentTime > 0) {
           return;
         }
-        setError('视频播放失败');
       });
 
       // 监听视频播放结束事件，自动播放下一集
