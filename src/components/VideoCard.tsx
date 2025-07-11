@@ -237,11 +237,11 @@ export default function VideoCard({
 
   return (
     <div
-      className='group relative w-full rounded-lg bg-transparent transition-all duration-300 transform hover:-translate-y-1 hover:scale-[1.02] webkit-animation-fix'
+      className='group relative w-full rounded-lg bg-transparent'
       onClick={handleClick}
     >
       {/* 海报容器 */}
-      <div className='relative aspect-[2/3] overflow-hidden rounded-lg transition-all duration-300'>
+      <div className='relative aspect-[2/3] overflow-hidden rounded-lg'>
         {/* 骨架屏 */}
         {!isLoaded && <ImagePlaceholder aspectRatio='aspect-[2/3]' />}
 
