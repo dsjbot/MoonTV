@@ -234,6 +234,31 @@ export async function getConfig(): Promise<AdminConfig> {
       '本网站仅提供影视信息搜索服务，所有内容均来自第三方网站。本站不存储任何视频资源，不对任何内容的准确性、合法性、完整性负责。';
     adminConfig.UserConfig.AllowRegister =
       process.env.NEXT_PUBLIC_ENABLE_REGISTER === 'true';
+
+    // 合并文件中的源信息
+    fileConfig = runtimeConfig as unknown as ConfigFileStruct;
+    const apiSiteEntries = Object.entries(fileConfig.api_site);
+    const existed = new Set((adminConfig.SourceConfig || []).map((s) => s.key));
+    apiSiteEntries.forEach(([key, site]) => {
+      if (!existed.has(key)) {
+        adminConfig!.SourceConfig.push({
+          key,
+          name: site.name,
+          api: site.api,
+          detail: site.detail,
+          from: 'config',
+          disabled: false,
+        });
+      }
+    });
+
+    // 检查现有源是否在 fileConfig.api_site 中，如果不在则标记为 custom
+    const apiSiteKeys = new Set(apiSiteEntries.map(([key]) => key));
+    adminConfig.SourceConfig.forEach((source) => {
+      if (!apiSiteKeys.has(source.key)) {
+        source.from = 'custom';
+      }
+    });
     cachedConfig = adminConfig;
   } else {
     // DB 无配置，执行一次初始化
