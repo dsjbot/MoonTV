@@ -78,6 +78,8 @@
 
 ### Cloudflare 部署
 
+**Cloudflare Pages 的环境变量尽量设置为密钥而非文本**
+
 #### 普通部署（localstorage）
 
 1. **Fork** 本仓库到你的 GitHub 账户。
