@@ -380,7 +380,7 @@ export async function getAllPlayRecords(): Promise<Record<string, PlayRecord>> {
   }
 
   // D1 存储模式：使用混合缓存策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 优先从缓存获取数据
     const cachedData = cacheManager.getCachedPlayRecords();
 
@@ -419,11 +419,6 @@ export async function getAllPlayRecords(): Promise<Record<string, PlayRecord>> {
     }
   }
 
-  // 其他数据库存储模式：直接从 API 获取
-  if (STORAGE_TYPE !== 'localstorage') {
-    return fetchFromApi<Record<string, PlayRecord>>(`/api/playrecords`);
-  }
-
   // localstorage 模式
   try {
     const raw = localStorage.getItem(PLAY_RECORDS_KEY);
@@ -447,7 +442,7 @@ export async function savePlayRecord(
   const key = generateStorageKey(source, id);
 
   // D1 存储模式：乐观更新策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedRecords = cacheManager.getCachedPlayRecords() || {};
     cachedRecords[key] = record;
@@ -480,24 +475,6 @@ export async function savePlayRecord(
     return;
   }
 
-  // 其他数据库存储模式：直接通过 API 保存
-  if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      const res = await fetch('/api/playrecords', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ key, record }),
-      });
-      if (!res.ok) throw new Error(`保存播放记录失败: ${res.status}`);
-    } catch (err) {
-      console.error('保存播放记录到数据库失败:', err);
-      throw err;
-    }
-    return;
-  }
-
   // localstorage 模式
   if (typeof window === 'undefined') {
     console.warn('无法在服务端保存播放记录到 localStorage');
@@ -508,6 +485,11 @@ export async function savePlayRecord(
     const allRecords = await getAllPlayRecords();
     allRecords[key] = record;
     localStorage.setItem(PLAY_RECORDS_KEY, JSON.stringify(allRecords));
+    window.dispatchEvent(
+      new CustomEvent('playRecordsUpdated', {
+        detail: allRecords,
+      })
+    );
   } catch (err) {
     console.error('保存播放记录失败:', err);
     throw err;
@@ -525,7 +507,7 @@ export async function deletePlayRecord(
   const key = generateStorageKey(source, id);
 
   // D1 存储模式：乐观更新策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedRecords = cacheManager.getCachedPlayRecords() || {};
     delete cachedRecords[key];
@@ -554,23 +536,6 @@ export async function deletePlayRecord(
     return;
   }
 
-  // 其他数据库存储模式：直接通过 API 删除
-  if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      const res = await fetch(
-        `/api/playrecords?key=${encodeURIComponent(key)}`,
-        {
-          method: 'DELETE',
-        }
-      );
-      if (!res.ok) throw new Error(`删除播放记录失败: ${res.status}`);
-    } catch (err) {
-      console.error('删除播放记录到数据库失败:', err);
-      throw err;
-    }
-    return;
-  }
-
   // localstorage 模式
   if (typeof window === 'undefined') {
     console.warn('无法在服务端删除播放记录到 localStorage');
@@ -581,7 +546,11 @@ export async function deletePlayRecord(
     const allRecords = await getAllPlayRecords();
     delete allRecords[key];
     localStorage.setItem(PLAY_RECORDS_KEY, JSON.stringify(allRecords));
-    console.log('播放记录已删除:', key);
+    window.dispatchEvent(
+      new CustomEvent('playRecordsUpdated', {
+        detail: allRecords,
+      })
+    );
   } catch (err) {
     console.error('删除播放记录失败:', err);
     throw err;
@@ -601,7 +570,7 @@ export async function getSearchHistory(): Promise<string[]> {
   }
 
   // D1 存储模式：使用混合缓存策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 优先从缓存获取数据
     const cachedData = cacheManager.getCachedSearchHistory();
 
@@ -638,16 +607,6 @@ export async function getSearchHistory(): Promise<string[]> {
     }
   }
 
-  // 其他数据库存储模式
-  if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      return fetchFromApi<string[]>(`/api/searchhistory`);
-    } catch (err) {
-      console.error('获取搜索历史失败:', err);
-      return [];
-    }
-  }
-
   // localStorage 模式
   try {
     const raw = localStorage.getItem(SEARCH_HISTORY_KEY);
@@ -670,7 +629,7 @@ export async function addSearchHistory(keyword: string): Promise<void> {
   if (!trimmed) return;
 
   // D1 存储模式：乐观更新策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedHistory = cacheManager.getCachedSearchHistory() || [];
     const newHistory = [trimmed, ...cachedHistory.filter((k) => k !== trimmed)];
@@ -703,22 +662,6 @@ export async function addSearchHistory(keyword: string): Promise<void> {
     return;
   }
 
-  // 其他数据库存储模式
-  if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      await fetch('/api/searchhistory', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ keyword: trimmed }),
-      });
-    } catch (err) {
-      console.error('保存搜索历史失败:', err);
-    }
-    return;
-  }
-
   // localStorage 模式
   if (typeof window === 'undefined') return;
 
@@ -730,6 +673,11 @@ export async function addSearchHistory(keyword: string): Promise<void> {
       newHistory.length = SEARCH_HISTORY_LIMIT;
     }
     localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+    window.dispatchEvent(
+      new CustomEvent('searchHistoryUpdated', {
+        detail: newHistory,
+      })
+    );
   } catch (err) {
     console.error('保存搜索历史失败:', err);
   }
@@ -741,7 +689,7 @@ export async function addSearchHistory(keyword: string): Promise<void> {
  */
 export async function clearSearchHistory(): Promise<void> {
   // D1 存储模式：乐观更新策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     cacheManager.cacheSearchHistory([]);
 
@@ -764,21 +712,14 @@ export async function clearSearchHistory(): Promise<void> {
     return;
   }
 
-  // 其他数据库存储模式
-  if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      await fetch(`/api/searchhistory`, {
-        method: 'DELETE',
-      });
-    } catch (err) {
-      console.error('清空搜索历史失败:', err);
-    }
-    return;
-  }
-
   // localStorage 模式
   if (typeof window === 'undefined') return;
   localStorage.removeItem(SEARCH_HISTORY_KEY);
+  window.dispatchEvent(
+    new CustomEvent('searchHistoryUpdated', {
+      detail: [],
+    })
+  );
 }
 
 /**
@@ -790,7 +731,7 @@ export async function deleteSearchHistory(keyword: string): Promise<void> {
   if (!trimmed) return;
 
   // D1 存储模式：乐观更新策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedHistory = cacheManager.getCachedSearchHistory() || [];
     const newHistory = cachedHistory.filter((k) => k !== trimmed);
@@ -818,18 +759,6 @@ export async function deleteSearchHistory(keyword: string): Promise<void> {
     return;
   }
 
-  // 其他数据库存储模式
-  if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      await fetch(`/api/searchhistory?keyword=${encodeURIComponent(trimmed)}`, {
-        method: 'DELETE',
-      });
-    } catch (err) {
-      console.error('删除搜索历史失败:', err);
-    }
-    return;
-  }
-
   // localStorage 模式
   if (typeof window === 'undefined') return;
 
@@ -837,6 +766,11 @@ export async function deleteSearchHistory(keyword: string): Promise<void> {
     const history = await getSearchHistory();
     const newHistory = history.filter((k) => k !== trimmed);
     localStorage.setItem(SEARCH_HISTORY_KEY, JSON.stringify(newHistory));
+    window.dispatchEvent(
+      new CustomEvent('searchHistoryUpdated', {
+        detail: newHistory,
+      })
+    );
   } catch (err) {
     console.error('删除搜索历史失败:', err);
   }
@@ -855,7 +789,7 @@ export async function getAllFavorites(): Promise<Record<string, Favorite>> {
   }
 
   // D1 存储模式：使用混合缓存策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 优先从缓存获取数据
     const cachedData = cacheManager.getCachedFavorites();
 
@@ -894,11 +828,6 @@ export async function getAllFavorites(): Promise<Record<string, Favorite>> {
     }
   }
 
-  // 其他数据库存储模式
-  if (STORAGE_TYPE !== 'localstorage') {
-    return fetchFromApi<Record<string, Favorite>>(`/api/favorites`);
-  }
-
   // localStorage 模式
   try {
     const raw = localStorage.getItem(FAVORITES_KEY);
@@ -922,7 +851,7 @@ export async function saveFavorite(
   const key = generateStorageKey(source, id);
 
   // D1 存储模式：乐观更新策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedFavorites = cacheManager.getCachedFavorites() || {};
     cachedFavorites[key] = favorite;
@@ -952,24 +881,6 @@ export async function saveFavorite(
     return;
   }
 
-  // 其他数据库存储模式
-  if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      const res = await fetch('/api/favorites', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ key, favorite }),
-      });
-      if (!res.ok) throw new Error(`保存收藏失败: ${res.status}`);
-    } catch (err) {
-      console.error('保存收藏到数据库失败:', err);
-      throw err;
-    }
-    return;
-  }
-
   // localStorage 模式
   if (typeof window === 'undefined') {
     console.warn('无法在服务端保存收藏到 localStorage');
@@ -980,6 +891,11 @@ export async function saveFavorite(
     const allFavorites = await getAllFavorites();
     allFavorites[key] = favorite;
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(allFavorites));
+    window.dispatchEvent(
+      new CustomEvent('favoritesUpdated', {
+        detail: allFavorites,
+      })
+    );
   } catch (err) {
     console.error('保存收藏失败:', err);
     throw err;
@@ -997,7 +913,7 @@ export async function deleteFavorite(
   const key = generateStorageKey(source, id);
 
   // D1 存储模式：乐观更新策略
-  if (STORAGE_TYPE === 'd1') {
+  if (STORAGE_TYPE !== 'localstorage') {
     // 立即更新缓存
     const cachedFavorites = cacheManager.getCachedFavorites() || {};
     delete cachedFavorites[key];
@@ -1023,20 +939,6 @@ export async function deleteFavorite(
     return;
   }
 
-  // 其他数据库存储模式
-  if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      const res = await fetch(`/api/favorites?key=${encodeURIComponent(key)}`, {
-        method: 'DELETE',
-      });
-      if (!res.ok) throw new Error(`删除收藏失败: ${res.status}`);
-    } catch (err) {
-      console.error('删除收藏到数据库失败:', err);
-      throw err;
-    }
-    return;
-  }
-
   // localStorage 模式
   if (typeof window === 'undefined') {
     console.warn('无法在服务端删除收藏到 localStorage');
@@ -1047,6 +949,11 @@ export async function deleteFavorite(
     const allFavorites = await getAllFavorites();
     delete allFavorites[key];
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(allFavorites));
+    window.dispatchEvent(
+      new CustomEvent('favoritesUpdated', {
+        detail: allFavorites,
+      })
+    );
   } catch (err) {
     console.error('删除收藏失败:', err);
     throw err;
@@ -1055,7 +962,7 @@ export async function deleteFavorite(
 
 /**
  * 判断是否已收藏。
- * D1 存储模式下优先使用缓存数据。
+ * D1 存储模式下使用混合缓存策略：优先返回缓存数据，后台异步同步最新数据。
  */
 export async function isFavorited(
   source: string,
@@ -1063,35 +970,42 @@ export async function isFavorited(
 ): Promise<boolean> {
   const key = generateStorageKey(source, id);
 
-  // D1 存储模式：优先使用缓存
-  if (STORAGE_TYPE === 'd1') {
-    const cachedFavorites = cacheManager.getCachedFavorites();
-    if (cachedFavorites) {
-      return !!cachedFavorites[key];
-    }
-
-    // 缓存为空时从 API 获取
-    try {
-      const res = await fetch(`/api/favorites?key=${encodeURIComponent(key)}`);
-      if (!res.ok) return false;
-      const data = await res.json();
-      return !!data;
-    } catch (err) {
-      console.error('检查收藏状态失败:', err);
-      return false;
-    }
-  }
-
-  // 其他数据库存储模式
+  // D1 存储模式：使用混合缓存策略
   if (STORAGE_TYPE !== 'localstorage') {
-    try {
-      const res = await fetch(`/api/favorites?key=${encodeURIComponent(key)}`);
-      if (!res.ok) return false;
-      const data = await res.json();
-      return !!data;
-    } catch (err) {
-      console.error('检查收藏状态失败:', err);
-      return false;
+    const cachedFavorites = cacheManager.getCachedFavorites();
+
+    if (cachedFavorites) {
+      // 返回缓存数据，同时后台异步更新
+      fetchFromApi<Record<string, Favorite>>(`/api/favorites`)
+        .then((freshData) => {
+          // 只有数据真正不同时才更新缓存
+          if (JSON.stringify(cachedFavorites) !== JSON.stringify(freshData)) {
+            cacheManager.cacheFavorites(freshData);
+            // 触发数据更新事件
+            window.dispatchEvent(
+              new CustomEvent('favoritesUpdated', {
+                detail: freshData,
+              })
+            );
+          }
+        })
+        .catch((err) => {
+          console.warn('后台同步收藏失败:', err);
+        });
+
+      return !!cachedFavorites[key];
+    } else {
+      // 缓存为空，直接从 API 获取并缓存
+      try {
+        const freshData = await fetchFromApi<Record<string, Favorite>>(
+          `/api/favorites`
+        );
+        cacheManager.cacheFavorites(freshData);
+        return !!freshData[key];
+      } catch (err) {
+        console.error('检查收藏状态失败:', err);
+        return false;
+      }
     }
   }
 
@@ -1101,42 +1015,32 @@ export async function isFavorited(
 }
 
 /**
- * 切换收藏状态
- * 返回切换后的状态（true = 已收藏）
- */
-export async function toggleFavorite(
-  source: string,
-  id: string,
-  favoriteData?: Favorite
-): Promise<boolean> {
-  const already = await isFavorited(source, id);
-
-  if (already) {
-    await deleteFavorite(source, id);
-    return false;
-  }
-
-  if (!favoriteData) {
-    throw new Error('收藏数据缺失');
-  }
-
-  await saveFavorite(source, id, favoriteData);
-  return true;
-}
-
-/**
  * 清空全部播放记录
+ * D1 存储模式下使用乐观更新：先更新缓存，再异步同步到数据库。
  */
 export async function clearAllPlayRecords(): Promise<void> {
-  // 数据库模式
+  // D1 存储模式：乐观更新策略
   if (STORAGE_TYPE !== 'localstorage') {
+    // 立即更新缓存
+    cacheManager.cachePlayRecords({});
+
+    // 触发立即更新事件
+    window.dispatchEvent(
+      new CustomEvent('playRecordsUpdated', {
+        detail: {},
+      })
+    );
+
+    // 异步同步到数据库
     try {
-      await fetch(`/api/playrecords`, {
+      const res = await fetch(`/api/playrecords`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
+      if (!res.ok) throw new Error(`清空播放记录失败: ${res.status}`);
     } catch (err) {
-      console.error('清空播放记录失败:', err);
+      await handleDatabaseOperationFailure('playRecords', err);
+      throw err;
     }
     return;
   }
@@ -1144,21 +1048,40 @@ export async function clearAllPlayRecords(): Promise<void> {
   // localStorage 模式
   if (typeof window === 'undefined') return;
   localStorage.removeItem(PLAY_RECORDS_KEY);
+  window.dispatchEvent(
+    new CustomEvent('playRecordsUpdated', {
+      detail: {},
+    })
+  );
 }
 
 /**
  * 清空全部收藏
+ * D1 存储模式下使用乐观更新：先更新缓存，再异步同步到数据库。
  */
 export async function clearAllFavorites(): Promise<void> {
-  // 数据库模式
+  // D1 存储模式：乐观更新策略
   if (STORAGE_TYPE !== 'localstorage') {
+    // 立即更新缓存
+    cacheManager.cacheFavorites({});
+
+    // 触发立即更新事件
+    window.dispatchEvent(
+      new CustomEvent('favoritesUpdated', {
+        detail: {},
+      })
+    );
+
+    // 异步同步到数据库
     try {
-      await fetch(`/api/favorites`, {
+      const res = await fetch(`/api/favorites`, {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
       });
+      if (!res.ok) throw new Error(`清空收藏失败: ${res.status}`);
     } catch (err) {
-      console.error('清空收藏失败:', err);
+      await handleDatabaseOperationFailure('favorites', err);
+      throw err;
     }
     return;
   }
@@ -1166,6 +1089,11 @@ export async function clearAllFavorites(): Promise<void> {
   // localStorage 模式
   if (typeof window === 'undefined') return;
   localStorage.removeItem(FAVORITES_KEY);
+  window.dispatchEvent(
+    new CustomEvent('favoritesUpdated', {
+      detail: {},
+    })
+  );
 }
 
 // ---------------- 混合缓存辅助函数 ----------------

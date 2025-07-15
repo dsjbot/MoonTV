@@ -129,27 +129,6 @@ export class DbManager {
     return favorite !== null;
   }
 
-  async toggleFavorite(
-    userName: string,
-    source: string,
-    id: string,
-    favoriteData?: Favorite
-  ): Promise<boolean> {
-    const isFav = await this.isFavorited(userName, source, id);
-
-    if (isFav) {
-      await this.deleteFavorite(userName, source, id);
-      return false;
-    }
-
-    if (favoriteData) {
-      await this.saveFavorite(userName, source, id, favoriteData);
-      return true;
-    }
-
-    throw new Error('Favorite data is required when adding to favorites');
-  }
-
   // ---------- 用户相关 ----------
   async registerUser(userName: string, password: string): Promise<void> {
     await this.storage.registerUser(userName, password);

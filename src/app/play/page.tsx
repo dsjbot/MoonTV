@@ -9,13 +9,14 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useEffect, useRef, useState } from 'react';
 
 import {
+  deleteFavorite,
   deletePlayRecord,
   generateStorageKey,
   getAllPlayRecords,
   isFavorited,
+  saveFavorite,
   savePlayRecord,
   subscribeToDataUpdates,
-  toggleFavorite,
 } from '@/lib/db.client';
 import { SearchResult } from '@/lib/types';
 import { getVideoResolutionFromM3u8, processImageUrl } from '@/lib/utils';
@@ -944,10 +945,13 @@ function PlayPageClient() {
       return;
 
     try {
-      const newState = await toggleFavorite(
-        currentSourceRef.current,
-        currentIdRef.current,
-        {
+      if (favorited) {
+        // 如果已收藏，删除收藏
+        await deleteFavorite(currentSourceRef.current, currentIdRef.current);
+        setFavorited(false);
+      } else {
+        // 如果未收藏，添加收藏
+        await saveFavorite(currentSourceRef.current, currentIdRef.current, {
           title: videoTitleRef.current,
           source_name: detailRef.current?.source_name || '',
           year: detailRef.current?.year,
@@ -955,9 +959,9 @@ function PlayPageClient() {
           total_episodes: detailRef.current?.episodes.length || 1,
           save_time: Date.now(),
           search_title: searchTitle,
-        }
-      );
-      setFavorited(newState);
+        });
+        setFavorited(true);
+      }
     } catch (err) {
       console.error('切换收藏失败:', err);
     }

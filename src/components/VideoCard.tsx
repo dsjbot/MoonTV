@@ -6,11 +6,12 @@ import { useRouter } from 'next/navigation';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import {
+  deleteFavorite,
   deletePlayRecord,
   generateStorageKey,
   isFavorited,
+  saveFavorite,
   subscribeToDataUpdates,
-  toggleFavorite,
 } from '@/lib/db.client';
 import { SearchResult } from '@/lib/types';
 import { processImageUrl } from '@/lib/utils';
@@ -144,15 +145,22 @@ export default function VideoCard({
       e.stopPropagation();
       if (from === 'douban' || !actualSource || !actualId) return;
       try {
-        const newState = await toggleFavorite(actualSource, actualId, {
-          title: actualTitle,
-          source_name: source_name || '',
-          year: actualYear || '',
-          cover: actualPoster,
-          total_episodes: actualEpisodes ?? 1,
-          save_time: Date.now(),
-        });
-        setFavorited(newState);
+        if (favorited) {
+          // 如果已收藏，删除收藏
+          await deleteFavorite(actualSource, actualId);
+          setFavorited(false);
+        } else {
+          // 如果未收藏，添加收藏
+          await saveFavorite(actualSource, actualId, {
+            title: actualTitle,
+            source_name: source_name || '',
+            year: actualYear || '',
+            cover: actualPoster,
+            total_episodes: actualEpisodes ?? 1,
+            save_time: Date.now(),
+          });
+          setFavorited(true);
+        }
       } catch (err) {
         throw new Error('切换收藏状态失败');
       }
@@ -166,6 +174,7 @@ export default function VideoCard({
       actualYear,
       actualPoster,
       actualEpisodes,
+      favorited,
     ]
   );
 
