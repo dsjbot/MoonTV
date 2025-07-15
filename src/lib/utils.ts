@@ -13,10 +13,12 @@ export function getImageProxyUrl(): string | null {
   if (enableImageProxy !== null) {
     if (!JSON.parse(enableImageProxy) as boolean) {
       return null;
-    } else {
-      // 启用，直接返回本地配置
-      return localStorage.getItem('imageProxyUrl')?.trim() || null;
     }
+  }
+
+  const localImageProxy = localStorage.getItem('imageProxyUrl');
+  if (localImageProxy != null) {
+    return localImageProxy.trim() ? localImageProxy.trim() : null;
   }
 
   // 如果未设置，则使用全局对象
