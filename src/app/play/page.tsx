@@ -129,6 +129,21 @@ function PlayPageClient() {
     null
   );
 
+  // 优选和测速开关
+  const [optimizationEnabled] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('enableOptimization');
+      if (saved !== null) {
+        try {
+          return JSON.parse(saved);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    return true;
+  });
+
   // 保存优选时的测速结果，避免EpisodeSelector重复测速
   const [precomputedVideoInfo, setPrecomputedVideoInfo] = useState<
     Map<string, { quality: string; loadSpeed: string; pingTime: number }>
@@ -524,35 +539,25 @@ function PlayPageClient() {
         return;
       }
 
-      let needLoadSource = currentSource;
-      let needLoadId = currentId;
-      if ((!currentSource && !currentId) || needPreferRef.current) {
+      let detailData: SearchResult = sourcesInfo[0];
+      if (
+        ((!currentSource && !currentId) || needPreferRef.current) &&
+        optimizationEnabled
+      ) {
         setLoadingStage('preferring');
         setLoadingMessage('⚡ 正在优选最佳播放源...');
 
-        const preferredSource = await preferBestSource(sourcesInfo);
-        setNeedPrefer(false);
-        setCurrentSource(preferredSource.source);
-        setCurrentId(preferredSource.id);
-        setVideoYear(preferredSource.year);
-        needLoadSource = preferredSource.source;
-        needLoadId = preferredSource.id;
+        detailData = await preferBestSource(sourcesInfo);
       }
 
       console.log(sourcesInfo);
-      console.log(needLoadSource, needLoadId);
-      const detailData = sourcesInfo.find(
-        (source) =>
-          source.source === needLoadSource &&
-          source.id.toString() === needLoadId.toString()
-      );
-      if (!detailData) {
-        setError('未找到匹配结果');
-        setLoading(false);
-        return;
-      }
-      setVideoTitle(detailData.title || videoTitleRef.current);
+      console.log(detailData.source, detailData.id);
+
+      setNeedPrefer(false);
+      setCurrentSource(detailData.source);
+      setCurrentId(detailData.id);
       setVideoYear(detailData.year);
+      setVideoTitle(detailData.title || videoTitleRef.current);
       setVideoCover(detailData.poster);
       setDetail(detailData);
       if (currentEpisodeIndex >= detailData.episodes.length) {
@@ -561,8 +566,8 @@ function PlayPageClient() {
 
       // 规范URL参数
       const newUrl = new URL(window.location.href);
-      newUrl.searchParams.set('source', needLoadSource);
-      newUrl.searchParams.set('id', needLoadId);
+      newUrl.searchParams.set('source', detailData.source);
+      newUrl.searchParams.set('id', detailData.id);
       newUrl.searchParams.set('year', detailData.year);
       newUrl.searchParams.set('title', detailData.title);
       newUrl.searchParams.delete('prefer');
