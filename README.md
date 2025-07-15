@@ -112,7 +112,7 @@ docker pull ghcr.io/senshinya/moontv:latest
 docker run -d --name moontv -p 3000:3000 ghcr.io/senshinya/moontv:latest
 ```
 
-访问 `http://服务器 IP:3000` 即可。
+访问 `http://服务器 IP:3000` 即可。（需自行到服务器控制台放通 `3000` 端口）
 
 ## Docker Compose 最佳实践
 
