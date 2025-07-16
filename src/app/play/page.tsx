@@ -540,8 +540,23 @@ function PlayPageClient() {
       }
 
       let detailData: SearchResult = sourcesInfo[0];
+      // 指定源和id且无需优选
+      if (currentSource && currentId && !needPreferRef.current) {
+        const target = sourcesInfo.find(
+          (source) => source.source === currentSource && source.id === currentId
+        );
+        if (target) {
+          detailData = target;
+        } else {
+          setError('未找到匹配结果');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // 未指定源和 id 或需要优选，且开启优选开关
       if (
-        ((!currentSource && !currentId) || needPreferRef.current) &&
+        (!currentSource || !currentId || needPreferRef.current) &&
         optimizationEnabled
       ) {
         setLoadingStage('preferring');
@@ -550,7 +565,6 @@ function PlayPageClient() {
         detailData = await preferBestSource(sourcesInfo);
       }
 
-      console.log(sourcesInfo);
       console.log(detailData.source, detailData.id);
 
       setNeedPrefer(false);
@@ -1131,9 +1145,9 @@ function PlayPageClient() {
         },
         settings: [
           {
-            html: blockAdEnabled ? '关闭去广告' : '开启去广告',
+            html: '去广告',
             icon: '<text x="50%" y="50%" font-size="20" font-weight="bold" text-anchor="middle" dominant-baseline="middle" fill="#ffffff">AD</text>',
-            tooltip: blockAdEnabled ? '当前开启' : '当前关闭',
+            tooltip: blockAdEnabled ? '已开启' : '已关闭',
             onClick() {
               const newVal = !blockAdEnabled;
               try {
