@@ -58,18 +58,18 @@ const DoubanSelector: React.FC<DoubanSelectorProps> = ({
 
   // 电视剧选择器选项
   const tvOptions: SelectorOption[] = [
-    { label: '综合', value: 'tv' },
-    { label: '国产剧', value: 'tv_domestic' },
-    { label: '欧美剧', value: 'tv_american' },
-    { label: '日剧', value: 'tv_japanese' },
-    { label: '韩剧', value: 'tv_korean' },
+    { label: '全部', value: 'tv' },
+    { label: '国产', value: 'tv_domestic' },
+    { label: '欧美', value: 'tv_american' },
+    { label: '日本', value: 'tv_japanese' },
+    { label: '韩国', value: 'tv_korean' },
     { label: '动漫', value: 'tv_animation' },
     { label: '纪录片', value: 'tv_documentary' },
   ];
 
   // 综艺选择器选项
   const showOptions: SelectorOption[] = [
-    { label: '综合', value: 'show' },
+    { label: '全部', value: 'show' },
     { label: '国内', value: 'show_domestic' },
     { label: '国外', value: 'show_foreign' },
   ];
