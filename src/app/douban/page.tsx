@@ -226,20 +226,13 @@ function DoubanPageClient() {
   // 处理选择器变化
   const handlePrimaryChange = useCallback(
     (value: string) => {
-      // 立即设置loading状态
       setLoading(true);
-      // 批量更新状态 - React 18会自动批处理这些更新
       setPrimarySelection(value);
-      // 电影类型时，重置二级选择器为第一个选项
-      if (type === 'movie') {
-        setSecondarySelection('全部');
-      }
     },
     [type]
   );
 
   const handleSecondaryChange = useCallback((value: string) => {
-    // 立即设置loading状态
     setLoading(true);
     setSecondarySelection(value);
   }, []);
