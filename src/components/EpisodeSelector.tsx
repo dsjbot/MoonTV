@@ -530,12 +530,7 @@ const EpisodeSelector: React.FC<EpisodeSelectorProps> = ({
                                 }
                               }
 
-                              // 始终显示占位符，确保布局一致且分辨率信息始终可见
-                              return optimizationEnabled ? (
-                                <div className='bg-gray-500/10 dark:bg-gray-400/20 text-gray-500 dark:text-gray-400 px-1.5 py-0 rounded text-xs flex-shrink-0 min-w-[50px] text-center'>
-                                  检测中
-                                </div>
-                              ) : null;
+                              return null;
                             })()}
                           </div>
 
