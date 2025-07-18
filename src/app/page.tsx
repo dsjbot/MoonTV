@@ -13,7 +13,7 @@ import {
   getAllPlayRecords,
   subscribeToDataUpdates,
 } from '@/lib/db.client';
-import { getDoubanRecommends } from '@/lib/douban.client';
+import { getDoubanCategories } from '@/lib/douban.client';
 import { DoubanItem } from '@/lib/types';
 
 import CapsuleSwitch from '@/components/CapsuleSwitch';
@@ -65,8 +65,12 @@ function HomeClient() {
 
         // 并行获取热门电影和热门剧集
         const [moviesData, tvShowsData] = await Promise.all([
-          getDoubanRecommends({ type: 'movie', tag: '热门' }),
-          getDoubanRecommends({ type: 'tv', tag: '热门' }),
+          getDoubanCategories({
+            kind: 'movie',
+            category: '热门',
+            type: '全部',
+          }),
+          getDoubanCategories({ kind: 'tv', category: 'tv', type: 'tv' }),
         ]);
 
         if (moviesData.code === 200) {
@@ -242,6 +246,7 @@ function HomeClient() {
                             poster={movie.poster}
                             douban_id={movie.id}
                             rate={movie.rate}
+                            year={movie.year}
                           />
                         </div>
                       ))}
@@ -288,6 +293,7 @@ function HomeClient() {
                             poster={show.poster}
                             douban_id={show.id}
                             rate={show.rate}
+                            year={show.year}
                           />
                         </div>
                       ))}

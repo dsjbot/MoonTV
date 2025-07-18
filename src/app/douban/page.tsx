@@ -294,6 +294,7 @@ function DoubanPageClient() {
                       poster={item.poster}
                       douban_id={item.id}
                       rate={item.rate}
+                      year={item.year}
                     />
                   </div>
                 ))}

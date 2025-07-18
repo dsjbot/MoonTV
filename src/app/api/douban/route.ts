@@ -100,6 +100,7 @@ export async function GET(request: Request) {
       title: item.title,
       poster: item.cover,
       rate: item.rate,
+      year: '',
     }));
 
     const response: DoubanResult = {
@@ -171,6 +172,7 @@ function handleTop250(pageStart: number) {
           title: title,
           poster: processedCover,
           rate: rate,
+          year: '',
         });
       }
 

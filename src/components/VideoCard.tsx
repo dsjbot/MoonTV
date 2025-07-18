@@ -195,7 +195,11 @@ export default function VideoCard({
 
   const handleClick = useCallback(() => {
     if (from === 'douban') {
-      router.push(`/play?title=${encodeURIComponent(actualTitle.trim())}`);
+      router.push(
+        `/play?title=${encodeURIComponent(actualTitle.trim())}${
+          actualYear ? `&year=${actualYear}` : ''
+        }`
+      );
     } else if (actualSource && actualId) {
       router.push(
         `/play?source=${actualSource}&id=${actualId}&title=${encodeURIComponent(
