@@ -57,7 +57,7 @@
 | 语言      | TypeScript 4                                                                                          |
 | 播放器    | [ArtPlayer](https://github.com/zhw2590582/ArtPlayer) · [HLS.js](https://github.com/video-dev/hls.js/) |
 | 代码质量  | ESLint · Prettier · Jest                                                                              |
-| 部署      | Docker · Vercel                                                                                       |
+| 部署      | Docker · Vercel · CloudFlare pages                                                                                 |
 
 ## 部署
 
