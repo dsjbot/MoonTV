@@ -3,28 +3,34 @@
 // AUTO-GENERATED SCRIPT: Converts config.json to TypeScript definition.
 // Usage: node scripts/convert-config.js
 
-const fs = require('fs');
-const path = require('path');
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { dirname } from "path";
+
+// Get __dirname equivalent for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Resolve project root (one level up from scripts folder)
-const projectRoot = path.resolve(__dirname, '..');
+const projectRoot = path.resolve(__dirname, "..");
 
 // Paths
-const configPath = path.join(projectRoot, 'config.json');
-const libDir = path.join(projectRoot, 'src', 'lib');
-const oldRuntimePath = path.join(libDir, 'runtime.ts');
-const newRuntimePath = path.join(libDir, 'runtime.ts');
+const configPath = path.join(projectRoot, "config.json");
+const libDir = path.join(projectRoot, "src", "lib");
+const oldRuntimePath = path.join(libDir, "runtime.ts");
+const newRuntimePath = path.join(libDir, "runtime.ts");
 
 // Delete the old runtime.ts file if it exists
 if (fs.existsSync(oldRuntimePath)) {
   fs.unlinkSync(oldRuntimePath);
-  console.log('旧的 runtime.ts 已删除');
+  console.log("旧的 runtime.ts 已删除");
 }
 
 // Read and parse config.json
 let rawConfig;
 try {
-  rawConfig = fs.readFileSync(configPath, 'utf8');
+  rawConfig = fs.readFileSync(configPath, "utf8");
 } catch (err) {
   console.error(`无法读取 ${configPath}:`, err);
   process.exit(1);
@@ -34,7 +40,7 @@ let config;
 try {
   config = JSON.parse(rawConfig);
 } catch (err) {
-  console.error('config.json 不是有效的 JSON:', err);
+  console.error("config.json 不是有效的 JSON:", err);
   process.exit(1);
 }
 
@@ -53,9 +59,9 @@ if (!fs.existsSync(libDir)) {
 
 // Write to runtime.ts
 try {
-  fs.writeFileSync(newRuntimePath, tsContent, 'utf8');
-  console.log('已生成 src/lib/runtime.ts');
+  fs.writeFileSync(newRuntimePath, tsContent, "utf8");
+  console.log("已生成 src/lib/runtime.ts");
 } catch (err) {
-  console.error('写入 runtime.ts 失败:', err);
+  console.error("写入 runtime.ts 失败:", err);
   process.exit(1);
 }
