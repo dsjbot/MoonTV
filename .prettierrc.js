@@ -1,5 +1,5 @@
-export default {
-  arrowParens: "always",
+module.exports = {
+  arrowParens: 'always',
   singleQuote: true,
   jsxSingleQuote: true,
   tabWidth: 2,
