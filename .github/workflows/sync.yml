@@ -20,7 +20,14 @@ jobs:
       - name: Checkout target repo
         uses: actions/checkout@v4
 
-      # Step 2: run the sync action
+
+      # Step 2: Get pre-sync HEAD commit hash
+      - name: Get pre-sync HEAD
+        id: pre_sync
+        run: echo "hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+
+
+      # Step 3: run the sync action
       - name: Sync upstream changes
         id: sync
         uses: aormsby/Fork-Sync-With-Upstream-action@v3.4.1
@@ -30,12 +37,30 @@ jobs:
           target_sync_branch: main
           target_repo_token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Sync check
-        if: failure()
-        run: |
-          echo "[Error] Due to a change in the workflow file of the upstream repository, GitHub has automatically suspended the scheduled automatic update. You need to manually sync your fork."
-          exit 1
+          
+      # Step 4: Get post-sync HEAD commit hash
+      - name: Get post-sync HEAD
+        id: post_sync
+        run: echo "hash=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
 
+
+      # Step 5: Only when hash changed, trigger build workflow
+      - name: Trigger Build & Push Docker image workflow if updated
+        if: steps.pre_sync.outputs.hash != steps.post_sync.outputs.hash
+        uses: peter-evans/workflow-dispatch@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          workflow: docker-image.yml
+          ref: main
+
+      # - name: Sync check
+      #   if: failure()
+      #   run: |
+      #     echo "[Error] Due to a change in the workflow file of the upstream repository, GitHub has automatically suspended the scheduled automatic update. You need to manually sync your fork."
+      #     exit 1
+
+      # Step 6: Clean up workflow runs
       - name: Delete workflow runs
         uses: Mattraks/delete-workflow-runs@main
         with:
